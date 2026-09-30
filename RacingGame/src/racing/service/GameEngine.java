@@ -29,18 +29,25 @@ public class GameEngine {
         this.trackOffsetY = 0;
     }
 
+    public void restart() {
+        this.player.reset(178, 450);
+        this.obstacles.clear();
+        this.coins.clear();
+        this.score = 0;
+        this.gameOver = false;
+        this.trackOffsetY = 0;
+    }
+
     public void update() throws CollisionException {
         if (gameOver) return;
 
         player.updateNitro();
 
-        // Если включено Нитро — скорость трассы увеличивается в 2.5 раза
         int currentSpeed = difficulty.getSpeedMultiplier() + (player.isNitroActive() ? 12 : 4);
         trackOffsetY = (trackOffsetY + currentSpeed) % 40;
 
         int laneX = 120 + random.nextInt(3) * 60;
 
-        // Спавн препятствий
         if (random.nextInt(100) < difficulty.getSpawnRate()) {
             if (random.nextBoolean()) {
                 obstacles.add(new ConeObstacle(laneX, -40));
@@ -49,12 +56,10 @@ public class GameEngine {
             }
         }
 
-        // Спавн бонусов
         if (random.nextInt(100) < 3) {
             coins.add(new CoinItem(laneX + 8, -30));
         }
 
-        // Движение монеток
         Iterator<CoinItem> coinIter = coins.iterator();
         while (coinIter.hasNext()) {
             CoinItem coin = coinIter.next();
@@ -68,7 +73,6 @@ public class GameEngine {
             }
         }
 
-        // Движение препятствий
         Iterator<Obstacle> obsIter = obstacles.iterator();
         while (obsIter.hasNext()) {
             Obstacle obs = obsIter.next();
@@ -88,7 +92,7 @@ public class GameEngine {
                 }
             } else if (obs.getY() > 600) {
                 obsIter.remove();
-                score += player.isNitroActive() ? 20 : 10; // Больше очков на нитро
+                score += player.isNitroActive() ? 20 : 10;
             }
         }
     }

@@ -19,8 +19,6 @@ import java.awt.event.KeyEvent;
 
 /**
  * Игровой панель UI на основе Swing JPanel.
- * Демонстрирует перехват и обработку исключений (try-catch),
- * использование игрового цикла и отрисовку интерфейсов.
  */
 public class GamePanel extends JPanel implements ActionListener {
     private static final int TILE_SIZE = 25;
@@ -28,7 +26,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private static final int GRID_HEIGHT = 20;
     private static final int SCREEN_WIDTH = GRID_WIDTH * TILE_SIZE;
     private static final int SCREEN_HEIGHT = GRID_HEIGHT * TILE_SIZE;
-    private static final int DELAY = 120;
+    private static final int DELAY = 110;
 
     private Snake snake;
     private Food food;
@@ -37,18 +35,14 @@ public class GamePanel extends JPanel implements ActionListener {
     private int score;
     private String gameOverReason;
 
-    // Конструктор
     public GamePanel() {
         setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
-        setBackground(Color.BLACK);
+        setBackground(new Color(14, 22, 16));
         setFocusable(true);
         addKeyListener(new GameKeyAdapter());
         initGame();
     }
 
-    /**
-     * Инициализация или сброс состояния игры.
-     */
     private void initGame() {
         snake = new Snake(GRID_WIDTH / 2, GRID_HEIGHT / 2, GRID_WIDTH, GRID_HEIGHT);
         food = new Food();
@@ -74,10 +68,8 @@ public class GamePanel extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (!isGameOver) {
             try {
-                // Пытаемся сделать ход
                 snake.move();
 
-                // Проверка поедания еды
                 if (snake.getHead().equals(food.getPosition())) {
                     snake.grow();
                     score += 10;
@@ -85,11 +77,9 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
 
             } catch (GameOverException ex) {
-                // ОБРАБОТКА ИСКЛЮЧЕНИЯ (Exception handling)
                 isGameOver = true;
                 gameOverReason = ex.getMessage();
                 timer.stop();
-                System.out.println("Исключение обработано: " + ex.getMessage());
             }
         }
         repaint();
@@ -99,40 +89,56 @@ public class GamePanel extends JPanel implements ActionListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // 1. Тёмно-зеленая шахматная трава / фон игрового поля
+        for (int r = 0; r < GRID_HEIGHT; r++) {
+            for (int c = 0; c < GRID_WIDTH; c++) {
+                if ((r + c) % 2 == 0) {
+                    g.setColor(new Color(18, 28, 20));
+                } else {
+                    g.setColor(new Color(14, 22, 16));
+                }
+                g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
         if (!isGameOver) {
-            // Отрисовка еды и змейки (используя контракт Drawable)
             food.draw(g, TILE_SIZE);
             snake.draw(g, TILE_SIZE);
 
             // Отрисовка счета
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 14));
-            g.drawString("Счет: " + score, 10, 20);
+            g.setColor(new Color(240, 240, 240));
+            g.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            g.drawString("🍎 Яблоки: " + (score / 10) + "  |  Счёт: " + score, 12, 22);
         } else {
             drawGameOverScreen(g);
         }
     }
 
     private void drawGameOverScreen(Graphics g) {
-        g.setColor(Color.RED);
-        g.setFont(new Font("Arial", Font.BOLD, 28));
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        g.setColor(new Color(231, 76, 60));
+        g.setFont(new Font("Segoe UI", Font.BOLD, 30));
         FontMetrics fm1 = getFontMetrics(g.getFont());
         String title = "GAME OVER";
         g.drawString(title, (SCREEN_WIDTH - fm1.stringWidth(title)) / 2, SCREEN_HEIGHT / 3);
 
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.PLAIN, 14));
+        g.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         FontMetrics fm2 = getFontMetrics(g.getFont());
 
         String reasonStr = "Причина: " + gameOverReason;
         g.drawString(reasonStr, (SCREEN_WIDTH - fm2.stringWidth(reasonStr)) / 2, SCREEN_HEIGHT / 2);
 
-        String scoreStr = "Итоговый счет: " + score;
+        String scoreStr = "Итоговый счёт: " + score;
         g.drawString(scoreStr, (SCREEN_WIDTH - fm2.stringWidth(scoreStr)) / 2, SCREEN_HEIGHT / 2 + 30);
 
-        g.setColor(Color.YELLOW);
-        String restartStr = "Нажмите ПРОБЕЛ для перезапуска";
-        g.drawString(restartStr, (SCREEN_WIDTH - fm2.stringWidth(restartStr)) / 2, SCREEN_HEIGHT / 2 + 70);
+        g.setColor(new Color(241, 196, 15));
+        g.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        FontMetrics fm3 = getFontMetrics(g.getFont());
+        String restartStr = "Нажмите ПРОБЕЛ для новой игры";
+        g.drawString(restartStr, (SCREEN_WIDTH - fm3.stringWidth(restartStr)) / 2, SCREEN_HEIGHT / 2 + 75);
     }
 
     private class GameKeyAdapter extends KeyAdapter {
