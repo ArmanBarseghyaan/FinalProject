@@ -5,8 +5,8 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/RacingGame/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/SeaBattle/src/ProjectSeaBattle" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/.gemini/antigravity/scratch/snake-game/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SeaBattle/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SnakeGame/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

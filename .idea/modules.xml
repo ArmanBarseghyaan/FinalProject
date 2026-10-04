@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.gemini/.gemini.iml" filepath="$PROJECT_DIR$/.gemini/.gemini.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/FinalProject.iml" filepath="$PROJECT_DIR$/.idea/FinalProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/RacingGame/RacingGame.iml" filepath="$PROJECT_DIR$/RacingGame/RacingGame.iml" />
       <module fileurl="file://$PROJECT_DIR$/SeaBattle/SeaBattle.iml" filepath="$PROJECT_DIR$/SeaBattle/SeaBattle.iml" />
     </modules>

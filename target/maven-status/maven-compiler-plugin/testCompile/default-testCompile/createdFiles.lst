@@ -1,0 +1,5 @@
+com/seabattle/model/BoardTest.class
+com/seabattle/network/NetworkManagerTest.class
+com/seabattle/controller/GameControllerTest.class
+com/seabattle/network/NetworkManagerTest$1.class
+com/seabattle/model/ShipTest.class
