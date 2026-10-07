@@ -1,6 +1,6 @@
 # 🎮 Final Project - Game Hub (Игровой Центр)
 
-Сборник аркадных и сетевых Java-игр, объединенных единым графическим (Swing) и консольным (CLI) лаунчером. Проект написан на **Java 17** с использованием сборщика проектов **Maven**.
+Сборник аркадных и сетевых Java-игр, объединенных единым графическим (JavaFX) и консольным (CLI) лаунчером. Проект написан на **Java 17** с использованием сборщика проектов **Maven**.
 
 ---
 
@@ -30,7 +30,7 @@
 ## 🛠 Требования к системе
 
 * **JDK**: 17 или выше (`java -version`)
-* **Maven**: 3.6+ (`mvn -version`) *(необязательно, если запускаете готовые `.jar` или `.class` файлы)*
+* **Maven**: 3.6+ для сборки и запуска из исходников.
 
 ---
 
@@ -38,14 +38,16 @@
 
 Вы можете запустить проект любым из удобных способов ниже:
 
-### 1. Запуск через Maven Exec Plugin (Самый простой способ для разработки)
+### 1. Запуск и сборка через Maven
 
 Находясь в корневой папке проекта (`FinalProject`):
 
-* **Графический GUI-режим**:
+* **Графический JavaFX-режим**:
   ```bash
-  mvn clean compile exec:java
+  mvn clean javafx:run
   ```
+  В IntelliJ IDEA также можно открыть `src/main/java/Main.java` и запустить класс `Main`
+  напрямую. Проект должен быть загружен как Maven-проект, чтобы IDE подключила JavaFX-зависимости.
 
 * **Консольный CLI-режим**:
   ```bash
@@ -54,44 +56,18 @@
 
 ---
 
-### 2. Запуск собранного Fat JAR (Рекомендуется для пользователей)
-
-В проекте уже собран исполняемый JAR-архив с включенными зависимостями:
-
-* **Запуск с графическим интерфейсом**:
+* **Сборка обычного JAR приложения**:
   ```bash
-  java -jar BattleshipApp.jar
+  mvn clean package
   ```
-  *(Или через скомпилированный Maven JAR)*:
-  ```bash
-  java -jar target/final-project-games-1.0-SNAPSHOT.jar
-  ```
+  Обычный JAR не включает JavaFX-зависимости, поэтому запускайте приложение через
+  `mvn clean javafx:run`, а не командой `java -jar`.
 
-* **Принудительный запуск в CLI-режиме (Консоль)**:
-  ```bash
-  java -jar BattleshipApp.jar --cli
-  ```
+Для автономного runtime-дистрибутива на текущей ОС можно использовать `mvn javafx:jlink`.
+Цель `jlink` требует модульный проект с `module-info.java`; пока проект не модульный,
+используйте `mvn clean javafx:run`.
 
----
-
-### 3. Запуск напрямую через Java Class (Без Maven/JAR)
-
-Если вам нужно запустить класс `Main` напрямую из терминала:
-
-```bash
-# Компиляция (если требуется)
-javac -encoding UTF-8 -d target/classes $(find src/main/java -name "*.java")
-
-# Запуск GUI
-java -cp target/classes Main
-
-# Запуск CLI
-java -cp target/classes Main --cli
-```
-
----
-
-### 4. Запуск автономных суб-игр через CLI (Отдельные консольные игры)
+### 2. Запуск автономных консольных игр
 
 Некоторые игры имеют независимые консольные версии:
 
@@ -120,15 +96,14 @@ mvn test
 
 ```text
 FinalProject/
-├── pom.xml                      # Конфигурация Maven
-├── Main.java                    # Главный входной класс с Swing/CLI меню
-├── BattleshipApp.jar            # Готовый исполняемый Fat JAR
+├── pom.xml                      # Конфигурация Maven и JavaFX
 ├── src/                         # Исходный код проекта
 │   ├── main/java/
-│   │   ├── com/seabattle/       # Морской бой (GUI, CLI, Sockets, Model)
+│   │   ├── Main.java            # JavaFX-лаунчер
+│   │   ├── com/seabattle/       # Морской бой (JavaFX, CLI, Sockets, Model)
 │   │   ├── com/snake/           # Змейка
 │   │   ├── racing/              # Гонки
 │   │   └── finalproject/pacman/ # Пакман (Модель, UI, Звуки)
 │   └── test/java/               # Unit-тесты
-└── finalproject/pacman/sounds/  # Аудио-ресурсы для игры Pac-Man (.wav)
+└── target/final-project-games-1.0-SNAPSHOT.jar # JAR приложения (JavaFX запускается Maven-плагином)
 ```

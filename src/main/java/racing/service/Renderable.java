@@ -1,7 +1,7 @@
 package racing.service;
 
-import java.awt.Graphics;
+import javafx.scene.canvas.GraphicsContext;
 
 public interface Renderable {
-    void draw(Graphics g);
+    void draw(GraphicsContext gc);
 }

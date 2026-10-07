@@ -1,6 +1,5 @@
 package finalproject.pacman.model;
 
-import java.awt.Point;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
@@ -70,16 +69,16 @@ public final class Maze {
 
     private void validatePassages() {
         boolean[][] visited = new boolean[ROWS][COLUMNS];
-        Queue<Point> queue = new ArrayDeque<>();
-        queue.add(new Point(1, 1));
+        Queue<GridPoint> queue = new ArrayDeque<>();
+        queue.add(new GridPoint(1, 1));
         visited[1][1] = true;
 
         while (!queue.isEmpty()) {
-            Point cell = queue.remove();
+            GridPoint cell = queue.remove();
             for (Direction direction : cardinalDirections()) {
-                Point next = nextCell(cell.y, cell.x, direction);
-                if (isWalkable(next.y, next.x) && !visited[next.y][next.x]) {
-                    visited[next.y][next.x] = true;
+                GridPoint next = nextCell(cell.y(), cell.x(), direction);
+                if (isWalkable(next.y(), next.x()) && !visited[next.y()][next.x()]) {
+                    visited[next.y()][next.x()] = true;
                     queue.add(next);
                 }
             }
@@ -96,8 +95,8 @@ public final class Maze {
 
                 int exits = 0;
                 for (Direction direction : cardinalDirections()) {
-                    Point next = nextCell(row, column, direction);
-                    if (isWalkable(next.y, next.x)) {
+                    GridPoint next = nextCell(row, column, direction);
+                    if (isWalkable(next.y(), next.x())) {
                         exits++;
                     }
                 }
@@ -209,7 +208,7 @@ public final class Maze {
         return row * TILE_SIZE + TILE_SIZE / 2.0;
     }
 
-    public Point nextCell(int row, int column, Direction direction) {
+    public GridPoint nextCell(int row, int column, Direction direction) {
         int nextRow = row + direction.getRowOffset();
         int nextColumn = column + direction.getColumnOffset();
         if (row == TUNNEL_ROW && nextColumn < 0) {
@@ -217,7 +216,7 @@ public final class Maze {
         } else if (row == TUNNEL_ROW && nextColumn >= COLUMNS) {
             nextColumn = 0;
         }
-        return new Point(nextColumn, nextRow);
+        return new GridPoint(nextColumn, nextRow);
     }
 
     /**
@@ -248,16 +247,16 @@ public final class Maze {
             Arrays.fill(row, -1);
         }
 
-        Queue<Point> queue = new ArrayDeque<>();
-        queue.add(new Point(targetColumn, targetRow));
+        Queue<GridPoint> queue = new ArrayDeque<>();
+        queue.add(new GridPoint(targetColumn, targetRow));
         distances[targetRow][targetColumn] = 0;
 
         while (!queue.isEmpty()) {
-            Point cell = queue.remove();
+            GridPoint cell = queue.remove();
             for (Direction direction : cardinalDirections()) {
-                Point next = nextCell(cell.y, cell.x, direction);
-                if (isWalkable(next.y, next.x) && distances[next.y][next.x] < 0) {
-                    distances[next.y][next.x] = distances[cell.y][cell.x] + 1;
+                GridPoint next = nextCell(cell.y(), cell.x(), direction);
+                if (isWalkable(next.y(), next.x()) && distances[next.y()][next.x()] < 0) {
+                    distances[next.y()][next.x()] = distances[cell.y()][cell.x()] + 1;
                     queue.add(next);
                 }
             }
@@ -267,12 +266,12 @@ public final class Maze {
         int bestDistance = flee ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int bestReversePenalty = Integer.MAX_VALUE;
         for (Direction direction : cardinalDirections()) {
-            Point next = nextCell(fromRow, fromColumn, direction);
-            if (!isWalkable(next.y, next.x) || distances[next.y][next.x] < 0) {
+            GridPoint next = nextCell(fromRow, fromColumn, direction);
+            if (!isWalkable(next.y(), next.x()) || distances[next.y()][next.x()] < 0) {
                 continue;
             }
 
-            int distance = distances[next.y][next.x];
+            int distance = distances[next.y()][next.x()];
             int reversePenalty = direction == currentDirection.opposite() ? 1 : 0;
             boolean betterDistance = flee ? distance > bestDistance : distance < bestDistance;
             if (betterDistance || (distance == bestDistance && reversePenalty < bestReversePenalty)) {

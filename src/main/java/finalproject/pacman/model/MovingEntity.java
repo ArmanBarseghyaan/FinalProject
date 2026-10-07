@@ -1,7 +1,6 @@
 package finalproject.pacman.model;
 
-import java.awt.Graphics2D;
-import java.awt.Point;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Базовый класс движущихся объектов. Он хранит позицию и реализует общее
@@ -43,16 +42,16 @@ public abstract class MovingEntity {
             return;
         }
 
-        Point target = maze.nextCell(row, column, direction);
+        GridPoint target = maze.nextCell(row, column, direction);
         if (maze.isTunnelWrap(row, column, direction)) {
-            row = target.y;
-            column = target.x;
+            row = target.y();
+            column = target.x();
             x = maze.centerX(column);
             y = maze.centerY(row);
             return;
         }
-        double targetX = maze.centerX(target.x);
-        double targetY = maze.centerY(target.y);
+        double targetX = maze.centerX(target.x());
+        double targetY = maze.centerY(target.y());
         double distanceToCenter = Math.abs(targetX - x) + Math.abs(targetY - y);
 
         double distance = Math.min(speed, distanceToCenter);
@@ -60,8 +59,8 @@ public abstract class MovingEntity {
         y += direction.getRowOffset() * distance;
 
         if (distance >= distanceToCenter - 0.001) {
-            row = target.y;
-            column = target.x;
+            row = target.y();
+            column = target.x();
             x = maze.centerX(column);
             y = maze.centerY(row);
         }
@@ -71,8 +70,8 @@ public abstract class MovingEntity {
         if (candidate == Direction.STOP) {
             return false;
         }
-        Point next = maze.nextCell(row, column, candidate);
-        return maze.isWalkable(next.y, next.x);
+        GridPoint next = maze.nextCell(row, column, candidate);
+        return maze.isWalkable(next.y(), next.x());
     }
 
     public final void resetPosition() {
@@ -103,5 +102,5 @@ public abstract class MovingEntity {
         return direction;
     }
 
-    public abstract void draw(Graphics2D graphics);
+    public abstract void draw(GraphicsContext gc);
 }

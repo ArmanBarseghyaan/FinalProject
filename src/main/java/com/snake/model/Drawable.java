@@ -1,11 +1,11 @@
 package com.snake.model;
 
-import java.awt.Graphics;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Интерфейс Drawable определяет контракт для объектов,
- * которые могут быть отрисованы на графическом контексте.
+ * которые могут быть отрисованы на графическом контексте JavaFX.
  */
 public interface Drawable {
-    void draw(Graphics g, int tileSize);
+    void draw(GraphicsContext gc, int tileSize);
 }

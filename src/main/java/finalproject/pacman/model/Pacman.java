@@ -1,7 +1,8 @@
 package finalproject.pacman.model;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.ArcType;
 
 /**
  * Игрок. Направление, заданное пользователем, применяется при первой
@@ -34,12 +35,12 @@ public final class Pacman extends MovingEntity {
     }
 
     @Override
-    public void draw(Graphics2D graphics) {
+    public void draw(GraphicsContext gc) {
         int diameter = Maze.TILE_SIZE - 5;
         int x = (int) Math.round(getX() - diameter / 2.0);
         int y = (int) Math.round(getY() - diameter / 2.0);
 
-        graphics.setColor(new Color(255, 211, 45));
+        gc.setFill(Color.rgb(255, 211, 45));
         int facingAngle;
         switch (getDirection()) {
             case LEFT:
@@ -56,6 +57,6 @@ public final class Pacman extends MovingEntity {
                 break;
         }
         int startAngle = facingAngle + mouthAngle / 2;
-        graphics.fillArc(x, y, diameter, diameter, startAngle, 360 - mouthAngle);
+        gc.fillArc(x, y, diameter, diameter, startAngle, 360 - mouthAngle, ArcType.ROUND);
     }
 }

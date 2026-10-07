@@ -4,42 +4,55 @@ import com.snake.exception.GameOverException;
 import com.snake.model.Direction;
 import com.snake.model.Food;
 import com.snake.model.Snake;
-
-import javax.swing.JPanel;
-import javax.swing.Timer;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.geometry.Pos;
+import javafx.geometry.VPos;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
- * Игровой панель UI на основе Swing JPanel.
+ * Игровая панель UI для Змейки на основе JavaFX Canvas & StackPane.
  */
-public class GamePanel extends JPanel implements ActionListener {
+public class GamePanel extends StackPane {
     private static final int TILE_SIZE = 25;
     private static final int GRID_WIDTH = 20;
     private static final int GRID_HEIGHT = 20;
     private static final int SCREEN_WIDTH = GRID_WIDTH * TILE_SIZE;
     private static final int SCREEN_HEIGHT = GRID_HEIGHT * TILE_SIZE;
-    private static final int DELAY = 110;
+    private static final int DELAY_MS = 110;
+
+    private final Canvas canvas;
+    private final GraphicsContext gc;
 
     private Snake snake;
     private Food food;
-    private Timer timer;
+    private Timeline timeline;
     private boolean isGameOver;
     private int score;
     private String gameOverReason;
 
     public GamePanel() {
-        setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
-        setBackground(new Color(14, 22, 16));
-        setFocusable(true);
-        addKeyListener(new GameKeyAdapter());
+        this.canvas = new Canvas(SCREEN_WIDTH, SCREEN_HEIGHT);
+        this.gc = canvas.getGraphicsContext2D();
+
+        getChildren().add(canvas);
+        setAlignment(Pos.CENTER);
+        setStyle("-fx-background-color: #0e1610;");
+
+        setFocusTraversable(true);
+        setOnKeyPressed(this::handleKeyPressed);
+
         initGame();
     }
 
@@ -51,11 +64,14 @@ public class GamePanel extends JPanel implements ActionListener {
         score = 0;
         gameOverReason = "";
 
-        if (timer != null && timer.isRunning()) {
-            timer.stop();
+        if (timeline != null) {
+            timeline.stop();
         }
-        timer = new Timer(DELAY, this);
-        timer.start();
+        timeline = new Timeline(new KeyFrame(Duration.millis(DELAY_MS), e -> gameTick()));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+
+        render();
     }
 
     private void spawnFoodValid() {
@@ -64,8 +80,7 @@ public class GamePanel extends JPanel implements ActionListener {
         } while (snake.getBody().contains(food.getPosition()));
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
+    private void gameTick() {
         if (!isGameOver) {
             try {
                 snake.move();
@@ -75,89 +90,100 @@ public class GamePanel extends JPanel implements ActionListener {
                     score += 10;
                     spawnFoodValid();
                 }
-
             } catch (GameOverException ex) {
                 isGameOver = true;
                 gameOverReason = ex.getMessage();
-                timer.stop();
+                timeline.stop();
             }
         }
-        repaint();
+        render();
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    public void stopGame() {
+        if (timeline != null) {
+            timeline.stop();
+        }
+    }
 
+    private void render() {
         // 1. Тёмно-зеленая шахматная трава / фон игрового поля
         for (int r = 0; r < GRID_HEIGHT; r++) {
             for (int c = 0; c < GRID_WIDTH; c++) {
                 if ((r + c) % 2 == 0) {
-                    g.setColor(new Color(18, 28, 20));
+                    gc.setFill(Color.rgb(18, 28, 20));
                 } else {
-                    g.setColor(new Color(14, 22, 16));
+                    gc.setFill(Color.rgb(14, 22, 16));
                 }
-                g.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                gc.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
 
         if (!isGameOver) {
-            food.draw(g, TILE_SIZE);
-            snake.draw(g, TILE_SIZE);
+            food.draw(gc, TILE_SIZE);
+            snake.draw(gc, TILE_SIZE);
 
             // Отрисовка счета
-            g.setColor(new Color(240, 240, 240));
-            g.setFont(new Font("Segoe UI", Font.BOLD, 15));
-            g.drawString("🍎 Яблоки: " + (score / 10) + "  |  Счёт: " + score, 12, 22);
+            gc.setTextAlign(TextAlignment.LEFT);
+            gc.setTextBaseline(VPos.BASELINE);
+            gc.setFill(Color.rgb(240, 240, 240));
+            gc.setFont(Font.font("Segoe UI", FontWeight.BOLD, 15));
+            gc.fillText("🍎 Яблоки: " + (score / 10) + "  |  Счёт: " + score, 12, 22);
         } else {
-            drawGameOverScreen(g);
+            drawGameOverScreen();
         }
     }
 
-    private void drawGameOverScreen(Graphics g) {
-        g.setColor(new Color(0, 0, 0, 190));
-        g.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    private void drawGameOverScreen() {
+        gc.setFill(Color.rgb(0, 0, 0, 190 / 255.0));
+        gc.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        g.setColor(new Color(231, 76, 60));
-        g.setFont(new Font("Segoe UI", Font.BOLD, 30));
-        FontMetrics fm1 = getFontMetrics(g.getFont());
-        String title = "GAME OVER";
-        g.drawString(title, (SCREEN_WIDTH - fm1.stringWidth(title)) / 2, SCREEN_HEIGHT / 3);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
 
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        FontMetrics fm2 = getFontMetrics(g.getFont());
+        gc.setFill(Color.rgb(231, 76, 60));
+        gc.setFont(Font.font("Segoe UI", FontWeight.BOLD, 30));
+        gc.fillText("GAME OVER", SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 3.0);
 
-        String reasonStr = "Причина: " + gameOverReason;
-        g.drawString(reasonStr, (SCREEN_WIDTH - fm2.stringWidth(reasonStr)) / 2, SCREEN_HEIGHT / 2);
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
+        gc.fillText("Причина: " + gameOverReason, SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0);
 
-        String scoreStr = "Итоговый счёт: " + score;
-        g.drawString(scoreStr, (SCREEN_WIDTH - fm2.stringWidth(scoreStr)) / 2, SCREEN_HEIGHT / 2 + 30);
+        gc.fillText("Итоговый счёт: " + score, SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0 + 30);
 
-        g.setColor(new Color(241, 196, 15));
-        g.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        FontMetrics fm3 = getFontMetrics(g.getFont());
-        String restartStr = "Нажмите ПРОБЕЛ для новой игры";
-        g.drawString(restartStr, (SCREEN_WIDTH - fm3.stringWidth(restartStr)) / 2, SCREEN_HEIGHT / 2 + 75);
+        gc.setFill(Color.rgb(241, 196, 15));
+        gc.setFont(Font.font("Segoe UI", FontWeight.BOLD, 15));
+        gc.fillText("Нажмите ПРОБЕЛ для новой игры", SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0 + 75);
     }
 
-    private class GameKeyAdapter extends KeyAdapter {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            int key = e.getKeyCode();
+    private void handleKeyPressed(KeyEvent e) {
+        KeyCode key = e.getCode();
 
-            if (isGameOver && key == KeyEvent.VK_SPACE) {
-                initGame();
-                repaint();
-                return;
-            }
-
-            switch (key) {
-                case KeyEvent.VK_LEFT, KeyEvent.VK_A -> snake.setDirection(Direction.LEFT);
-                case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> snake.setDirection(Direction.RIGHT);
-                case KeyEvent.VK_UP, KeyEvent.VK_W -> snake.setDirection(Direction.UP);
-                case KeyEvent.VK_DOWN, KeyEvent.VK_S -> snake.setDirection(Direction.DOWN);
-            }
+        if (isGameOver && key == KeyCode.SPACE) {
+            initGame();
+            return;
         }
+
+        switch (key) {
+            case LEFT, A -> snake.setDirection(Direction.LEFT);
+            case RIGHT, D -> snake.setDirection(Direction.RIGHT);
+            case UP, W -> snake.setDirection(Direction.UP);
+            case DOWN, S -> snake.setDirection(Direction.DOWN);
+            default -> {}
+        }
+    }
+
+    public static void showGame(Stage parent) {
+        Stage stage = new Stage();
+        stage.setTitle("Змейка (Snake Game)");
+        GamePanel panel = new GamePanel();
+        Scene scene = new Scene(panel, SCREEN_WIDTH, SCREEN_HEIGHT);
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.setOnCloseRequest(e -> panel.stopGame());
+        if (parent != null) {
+            stage.initOwner(parent);
+        }
+        stage.show();
+        panel.requestFocus();
     }
 }

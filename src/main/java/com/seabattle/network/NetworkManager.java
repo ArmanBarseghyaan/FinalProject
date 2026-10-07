@@ -1,6 +1,6 @@
 package com.seabattle.network;
 
-import javax.swing.SwingUtilities;
+import javafx.application.Platform;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Сетевой менеджер для управления Java Sockets (ServerSocket / Socket).
  * Выполняет все сетевые операции чтение/записи в фоновых потоках,
- * а вызовы уведомлений интерфейса передает через SwingUtilities.invokeLater().
+ * а вызовы уведомлений интерфейса передает через Platform.runLater().
  */
 public class NetworkManager {
 
@@ -102,7 +102,7 @@ public class NetworkManager {
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
         String remoteAddress = socket.getRemoteSocketAddress().toString();
-        SwingUtilities.invokeLater(() -> {
+        Platform.runLater(() -> {
             if (listener != null) {
                 listener.onConnected(isHost, remoteAddress);
             }
@@ -113,7 +113,7 @@ public class NetworkManager {
                 String line;
                 while (isRunning && (line = reader.readLine()) != null) {
                     final String msg = line;
-                    SwingUtilities.invokeLater(() -> {
+                    Platform.runLater(() -> {
                         if (listener != null) {
                             listener.onMessageReceived(msg);
                         }
@@ -125,7 +125,7 @@ public class NetworkManager {
                 }
             } finally {
                 closeConnection();
-                SwingUtilities.invokeLater(() -> {
+                Platform.runLater(() -> {
                     if (listener != null) {
                         listener.onDisconnected();
                     }
@@ -150,7 +150,7 @@ public class NetworkManager {
 
     private void notifyConnectionFailed(String errorMsg) {
         closeConnection();
-        SwingUtilities.invokeLater(() -> {
+        Platform.runLater(() -> {
             if (listener != null) {
                 listener.onConnectionFailed(errorMsg);
             }

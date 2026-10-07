@@ -1,9 +1,14 @@
 package com.snake.model;
 
 import com.snake.exception.GameOverException;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 
-import java.awt.*;
-import java.awt.geom.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -91,10 +96,7 @@ public class Snake implements Movable, Drawable {
     }
 
     @Override
-    public void draw(Graphics g, int tileSize) {
-        Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+    public void draw(GraphicsContext gc, int tileSize) {
         int totalSegments = body.size();
 
         // 1. Отрисовка тела змейки (от хвоста к шее)
@@ -112,31 +114,32 @@ public class Snake implements Movable, Drawable {
             int cy = py + offset;
 
             // Тень сегмента
-            g2d.setColor(new Color(0, 0, 0, 70));
-            g2d.fillOval(cx + 2, cy + 2, segSize, segSize);
+            gc.setFill(Color.rgb(0, 0, 0, 70 / 255.0));
+            gc.fillOval(cx + 2, cy + 2, segSize, segSize);
 
             // 3D Объёмный радиальный градиент (изумрудная шкура змеи)
-            Point2D center = new Point2D.Float(cx + segSize * 0.35f, cy + segSize * 0.35f);
-            float radius = segSize * 0.75f;
-            float[] dist = {0.0f, 0.7f, 1.0f};
-            Color[] colors = {
-                new Color(85, 225, 65),
-                new Color(39, 174, 96),
-                new Color(15, 85, 40)
-            };
-            RadialGradientPaint bodyGrad = new RadialGradientPaint(center, radius, dist, colors);
-            g2d.setPaint(bodyGrad);
-            g2d.fillOval(cx, cy, segSize, segSize);
+            RadialGradient bodyGrad = new RadialGradient(
+                    0, 0,
+                    cx + segSize * 0.35, cy + segSize * 0.35,
+                    segSize * 0.75,
+                    false,
+                    CycleMethod.NO_CYCLE,
+                    new Stop(0.0, Color.rgb(85, 225, 65)),
+                    new Stop(0.7, Color.rgb(39, 174, 96)),
+                    new Stop(1.0, Color.rgb(15, 85, 40))
+            );
+            gc.setFill(bodyGrad);
+            gc.fillOval(cx, cy, segSize, segSize);
 
             // Чешуйчатый рисунок по центру спины
-            g2d.setColor(new Color(10, 65, 30, 150));
+            gc.setFill(Color.rgb(10, 65, 30, 150 / 255.0));
             int midX = px + tileSize / 2;
             int midY = py + tileSize / 2;
-            g2d.fillOval(midX - 3, midY - 3, 6, 6);
+            gc.fillOval(midX - 3, midY - 3, 6, 6);
 
             // Блик на чешуе
-            g2d.setColor(new Color(255, 255, 255, 90));
-            g2d.fillOval(cx + 3, cy + 3, segSize / 4, segSize / 5);
+            gc.setFill(Color.rgb(255, 255, 255, 90 / 255.0));
+            gc.fillOval(cx + 3, cy + 3, segSize / 4.0, segSize / 5.0);
         }
 
         // 2. Отрисовка Головы Реалистичной Змейки
@@ -145,77 +148,80 @@ public class Snake implements Movable, Drawable {
         int hy = head.getY() * tileSize;
 
         // Тень головы
-        g2d.setColor(new Color(0, 0, 0, 90));
-        g2d.fillOval(hx + 3, hy + 3, tileSize - 2, tileSize - 2);
+        gc.setFill(Color.rgb(0, 0, 0, 90 / 255.0));
+        gc.fillOval(hx + 3, hy + 3, tileSize - 2, tileSize - 2);
 
         // 3D Градиент головы
-        Point2D headCenter = new Point2D.Float(hx + tileSize * 0.4f, hy + tileSize * 0.4f);
-        float headRadius = tileSize * 0.8f;
-        Color[] headColors = {
-            new Color(95, 240, 75),
-            new Color(42, 185, 85),
-            new Color(16, 95, 42)
-        };
-        g2d.setPaint(new RadialGradientPaint(headCenter, headRadius, new float[]{0f, 0.7f, 1f}, headColors));
-        g2d.fillOval(hx + 1, hy + 1, tileSize - 2, tileSize - 2);
+        RadialGradient headGrad = new RadialGradient(
+                0, 0,
+                hx + tileSize * 0.4, hy + tileSize * 0.4,
+                tileSize * 0.8,
+                false,
+                CycleMethod.NO_CYCLE,
+                new Stop(0.0, Color.rgb(95, 240, 75)),
+                new Stop(0.7, Color.rgb(42, 185, 85)),
+                new Stop(1.0, Color.rgb(16, 95, 42))
+        );
+        gc.setFill(headGrad);
+        gc.fillOval(hx + 1, hy + 1, tileSize - 2, tileSize - 2);
 
         // Раздвоенный красный змеиный язык
-        g2d.setColor(new Color(231, 76, 60));
-        g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gc.setStroke(Color.rgb(231, 76, 60));
+        gc.setLineWidth(2.0);
+        gc.setLineCap(StrokeLineCap.ROUND);
+        gc.setLineJoin(StrokeLineJoin.ROUND);
 
         int cx = hx + tileSize / 2;
         int cy = hy + tileSize / 2;
 
         switch (direction) {
             case RIGHT -> {
-                g2d.drawLine(hx + tileSize - 2, cy, hx + tileSize + 6, cy);
-                g2d.drawLine(hx + tileSize + 6, cy, hx + tileSize + 9, cy - 3);
-                g2d.drawLine(hx + tileSize + 6, cy, hx + tileSize + 9, cy + 3);
-                drawSnakeEyes(g2d, hx + tileSize - 9, hy + 5, hx + tileSize - 9, hy + tileSize - 10, direction);
+                gc.strokeLine(hx + tileSize - 2, cy, hx + tileSize + 6, cy);
+                gc.strokeLine(hx + tileSize + 6, cy, hx + tileSize + 9, cy - 3);
+                gc.strokeLine(hx + tileSize + 6, cy, hx + tileSize + 9, cy + 3);
+                drawSnakeEyes(gc, hx + tileSize - 9, hy + 5, hx + tileSize - 9, hy + tileSize - 10, direction);
             }
             case LEFT -> {
-                g2d.drawLine(hx + 2, cy, hx - 6, cy);
-                g2d.drawLine(hx - 6, cy, hx - 9, cy - 3);
-                g2d.drawLine(hx - 6, cy, hx - 9, cy + 3);
-                drawSnakeEyes(g2d, hx + 4, hy + 5, hx + 4, hy + tileSize - 10, direction);
+                gc.strokeLine(hx + 2, cy, hx - 6, cy);
+                gc.strokeLine(hx - 6, cy, hx - 9, cy - 3);
+                gc.strokeLine(hx - 6, cy, hx - 9, cy + 3);
+                drawSnakeEyes(gc, hx + 4, hy + 5, hx + 4, hy + tileSize - 10, direction);
             }
             case UP -> {
-                g2d.drawLine(cx, hy + 2, cx, hy - 6);
-                g2d.drawLine(cx, hy - 6, cx - 3, hy - 9);
-                g2d.drawLine(cx, hy - 6, cx + 3, hy - 9);
-                drawSnakeEyes(g2d, hx + 5, hy + 4, hx + tileSize - 10, hy + 4, direction);
+                gc.strokeLine(cx, hy + 2, cx, hy - 6);
+                gc.strokeLine(cx, hy - 6, cx - 3, hy - 9);
+                gc.strokeLine(cx, hy - 6, cx + 3, hy - 9);
+                drawSnakeEyes(gc, hx + 5, hy + 4, hx + tileSize - 10, hy + 4, direction);
             }
             case DOWN -> {
-                g2d.drawLine(cx, hy + tileSize - 2, cx, hy + tileSize + 6);
-                g2d.drawLine(cx, hy + tileSize + 6, cx - 3, hy + tileSize + 9);
-                g2d.drawLine(cx, hy + tileSize + 6, cx + 3, hy + tileSize + 9);
-                drawSnakeEyes(g2d, hx + 5, hy + tileSize - 9, hx + tileSize - 10, hy + tileSize - 9, direction);
+                gc.strokeLine(cx, hy + tileSize - 2, cx, hy + tileSize + 6);
+                gc.strokeLine(cx, hy + tileSize + 6, cx - 3, hy + tileSize + 9);
+                gc.strokeLine(cx, hy + tileSize + 6, cx + 3, hy + tileSize + 9);
+                drawSnakeEyes(gc, hx + 5, hy + tileSize - 9, hx + tileSize - 10, hy + tileSize - 9, direction);
             }
         }
-
-        g2d.dispose();
     }
 
-    private void drawSnakeEyes(Graphics2D g2d, int x1, int y1, int x2, int y2, Direction dir) {
+    private void drawSnakeEyes(GraphicsContext gc, int x1, int y1, int x2, int y2, Direction dir) {
         int eyeSize = 6;
         // Золотистый фоновый слой змеиного глаза
-        g2d.setColor(new Color(241, 196, 15));
-        g2d.fillOval(x1, y1, eyeSize, eyeSize);
-        g2d.fillOval(x2, y2, eyeSize, eyeSize);
+        gc.setFill(Color.rgb(241, 196, 15));
+        gc.fillOval(x1, y1, eyeSize, eyeSize);
+        gc.fillOval(x2, y2, eyeSize, eyeSize);
 
         // Вертикальный щелевидный зрачок
-        g2d.setColor(Color.BLACK);
+        gc.setFill(Color.BLACK);
         if (dir == Direction.LEFT || dir == Direction.RIGHT) {
-            g2d.fillRect(x1 + 2, y1 + 1, 2, 4);
-            g2d.fillRect(x2 + 2, y2 + 1, 2, 4);
+            gc.fillRect(x1 + 2, y1 + 1, 2, 4);
+            gc.fillRect(x2 + 2, y2 + 1, 2, 4);
         } else {
-            g2d.fillRect(x1 + 1, y1 + 2, 4, 2);
-            g2d.fillRect(x2 + 1, y2 + 2, 4, 2);
+            gc.fillRect(x1 + 1, y1 + 2, 4, 2);
+            gc.fillRect(x2 + 1, y2 + 2, 4, 2);
         }
 
         // Блик света на зрачке
-        g2d.setColor(Color.WHITE);
-        g2d.fillOval(x1 + 1, y1 + 1, 2, 2);
-        g2d.fillOval(x2 + 1, y2 + 1, 2, 2);
+        gc.setFill(Color.WHITE);
+        gc.fillOval(x1 + 1, y1 + 1, 2, 2);
+        gc.fillOval(x2 + 1, y2 + 1, 2, 2);
     }
 }

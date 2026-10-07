@@ -1,10 +1,10 @@
 package racing.model;
 
 import racing.service.Collectible;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 public class CoinItem extends GameObject implements Collectible {
 
@@ -18,24 +18,22 @@ public class CoinItem extends GameObject implements Collectible {
     }
 
     @Override
-    public void draw(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-
+    public void draw(GraphicsContext gc) {
         // Тень
-        g2d.setColor(new Color(0, 0, 0, 60));
-        g2d.fillOval(getX() + 2, getY() + getHeight() - 4, getWidth() - 4, 6);
+        gc.setFill(Color.rgb(0, 0, 0, 60 / 255.0));
+        gc.fillOval(getX() + 2, getY() + getHeight() - 4, getWidth() - 4, 6);
 
         // Внешнее кольцо (темно-золотое)
-        g2d.setColor(new Color(218, 165, 32));
-        g2d.fillOval(getX(), getY(), getWidth(), getHeight());
+        gc.setFill(Color.rgb(218, 165, 32));
+        gc.fillOval(getX(), getY(), getWidth(), getHeight());
 
         // Внутренний блик (ярко-желтый)
-        g2d.setColor(new Color(255, 215, 0));
-        g2d.fillOval(getX() + 2, getY() + 2, getWidth() - 4, getHeight() - 4);
+        gc.setFill(Color.rgb(255, 215, 0));
+        gc.fillOval(getX() + 2, getY() + 2, getWidth() - 4, getHeight() - 4);
 
         // Символ доллара
-        g2d.setColor(new Color(139, 69, 19));
-        g2d.setFont(new Font("Arial", Font.BOLD, 14));
-        g2d.drawString("$", getX() + 8, getY() + 17);
+        gc.setFill(Color.rgb(139, 69, 19));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        gc.fillText("$", getX() + 8, getY() + 17);
     }
 }

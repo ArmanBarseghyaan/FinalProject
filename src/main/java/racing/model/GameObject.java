@@ -1,7 +1,7 @@
 package racing.model;
 
 import racing.service.Renderable;
-import java.awt.Rectangle;
+import javafx.geometry.Rectangle2D;
 
 public abstract class GameObject implements Renderable {
     private int x;
@@ -16,8 +16,8 @@ public abstract class GameObject implements Renderable {
         this.height = height;
     }
 
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, width, height);
+    public Rectangle2D getBounds() {
+        return new Rectangle2D(x, y, width, height);
     }
 
     public int getX() { return x; }

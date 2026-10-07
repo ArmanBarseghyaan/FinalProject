@@ -1,44 +1,45 @@
 package finalproject.pacman.ui;
 
+import finalproject.pacman.audio.SoundManager;
 import finalproject.pacman.model.Direction;
 import finalproject.pacman.model.Ghost;
 import finalproject.pacman.model.Maze;
 import finalproject.pacman.model.Pacman;
-import finalproject.pacman.audio.SoundManager;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Pos;
+import javafx.geometry.VPos;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
 
-import javax.swing.AbstractAction;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
-import javax.swing.Timer;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Игровая Swing-панель. Таймер обновляет состояние примерно 60 раз в секунду,
- * а привязки клавиш работают независимо от фокуса на дочерних элементах.
+ * Игровая JavaFX-панель Pacman. Таймер обновляет состояние примерно 60 раз в секунду.
  */
-public final class PacmanGamePanel extends JPanel {
-    private static final int FRAME_DELAY_MS = 16;
+public final class PacmanGamePanel extends StackPane {
     private static final long FRIGHTENED_DURATION_NANOS = 7_000_000_000L;
     private static final int GHOST_HOUSE_ROW = 15;
-    private static final Color BACKGROUND = new Color(10, 13, 31);
-    private static final Color WALL_COLOR = new Color(27, 71, 166);
+    private static final Color BACKGROUND = Color.rgb(10, 13, 31);
+    private static final Color WALL_COLOR = Color.rgb(27, 71, 166);
 
     private final Maze maze = new Maze();
     private final Pacman pacman = new Pacman(1, 1);
     private final List<Ghost> ghosts = new ArrayList<>();
     private final SoundManager sounds = new SoundManager();
-    private final Timer timer;
+    private final Canvas canvas;
+    private final GraphicsContext gc;
+
+    private AnimationTimer gameTimer;
     private int score;
     private int lives = 3;
     private boolean gameOver;
@@ -49,25 +50,45 @@ public final class PacmanGamePanel extends JPanel {
     private int ghostsEaten;
 
     public PacmanGamePanel() {
-        setPreferredSize(new Dimension(maze.getWidth(), maze.getHeight()));
-        setBackground(BACKGROUND);
-        setFocusable(true);
-        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 12, new Color(245, 73, 96)));
-        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 13, new Color(70, 222, 235)));
-        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 14, new Color(255, 154, 65)));
-        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 15, new Color(220, 105, 235)));
+        this.canvas = new Canvas(maze.getWidth(), maze.getHeight());
+        this.gc = canvas.getGraphicsContext2D();
 
-        installKeyBindings();
-        timer = new Timer(FRAME_DELAY_MS, event -> updateGame());
-        timer.start();
+        getChildren().add(canvas);
+        setAlignment(Pos.CENTER);
+        setStyle("-fx-background-color: #0a0d1f;");
+
+        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 12, Color.rgb(245, 73, 96)));
+        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 13, Color.rgb(70, 222, 235)));
+        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 14, Color.rgb(255, 154, 65)));
+        ghosts.add(new Ghost(GHOST_HOUSE_ROW, 15, Color.rgb(220, 105, 235)));
+
+        setFocusTraversable(true);
+        setOnKeyPressed(this::handleKeyPressed);
+
+        initTimer();
+        render();
     }
 
-    private void installKeyBindings() {
-        bindDirection("left", Direction.LEFT, key(KeyEvent.VK_LEFT), key(KeyEvent.VK_A));
-        bindDirection("right", Direction.RIGHT, key(KeyEvent.VK_RIGHT), key(KeyEvent.VK_D));
-        bindDirection("up", Direction.UP, key(KeyEvent.VK_UP), key(KeyEvent.VK_W));
-        bindDirection("down", Direction.DOWN, key(KeyEvent.VK_DOWN), key(KeyEvent.VK_S));
-        bindAction("pause", key(KeyEvent.VK_P), event -> {
+    private void initTimer() {
+        gameTimer = new AnimationTimer() {
+            private long lastUpdate = 0;
+
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdate >= 16_000_000L) {
+                    updateGame();
+                    render();
+                    lastUpdate = now;
+                }
+            }
+        };
+        gameTimer.start();
+    }
+
+    private void handleKeyPressed(KeyEvent e) {
+        KeyCode code = e.getCode();
+
+        if (code == KeyCode.P) {
             if (started && !gameOver) {
                 paused = !paused;
                 if (paused) {
@@ -75,39 +96,25 @@ public final class PacmanGamePanel extends JPanel {
                 } else {
                     sounds.resume();
                 }
-                repaint();
+                render();
             }
-        });
-        bindAction("start-enter", key(KeyEvent.VK_ENTER), event -> startOrRestartGame());
-        bindAction("start-space", key(KeyEvent.VK_SPACE), event -> startOrRestartGame());
-    }
-
-    private KeyStroke key(int keyCode) {
-        return KeyStroke.getKeyStroke(keyCode, 0);
-    }
-
-    private void bindDirection(String name, Direction direction, KeyStroke... strokes) {
-        bindAction(name, strokes, event -> {
-            if (!gameOver) {
-                pacman.requestDirection(direction);
-            }
-        });
-    }
-
-    private void bindAction(String name, KeyStroke stroke, GameAction action) {
-        bindAction(name, new KeyStroke[]{stroke}, action);
-    }
-
-    private void bindAction(String name, KeyStroke[] strokes, GameAction action) {
-        for (KeyStroke stroke : strokes) {
-            getInputMap(WHEN_IN_FOCUSED_WINDOW).put(stroke, name);
+            return;
         }
-        getActionMap().put(name, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                action.perform(event);
+
+        if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
+            startOrRestartGame();
+            return;
+        }
+
+        if (!gameOver && !paused) {
+            switch (code) {
+                case LEFT, A -> pacman.requestDirection(Direction.LEFT);
+                case RIGHT, D -> pacman.requestDirection(Direction.RIGHT);
+                case UP, W -> pacman.requestDirection(Direction.UP);
+                case DOWN, S -> pacman.requestDirection(Direction.DOWN);
+                default -> {}
             }
-        });
+        }
     }
 
     private void updateGame() {
@@ -135,9 +142,7 @@ public final class PacmanGamePanel extends JPanel {
         if (maze.getRemainingPellets() == 0) {
             won = true;
             gameOver = true;
-            timer.stop();
             sounds.stopAll();
-            repaint();
             return;
         }
 
@@ -150,7 +155,6 @@ public final class PacmanGamePanel extends JPanel {
                 ghost.setFrightened(false);
             }
         }
-        repaint();
     }
 
     private boolean isFrightened() {
@@ -175,7 +179,6 @@ public final class PacmanGamePanel extends JPanel {
                 if (lives == 0) {
                     gameOver = true;
                     won = false;
-                    timer.stop();
                     sounds.stopAll();
                 } else {
                     resetPositions();
@@ -210,10 +213,6 @@ public final class PacmanGamePanel extends JPanel {
             ghost.setFrightened(false);
         }
         sounds.startGame();
-        repaint();
-        if (!timer.isRunning()) {
-            timer.start();
-        }
     }
 
     private void startOrRestartGame() {
@@ -223,93 +222,113 @@ public final class PacmanGamePanel extends JPanel {
     }
 
     public void stopGame() {
-        timer.stop();
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
         sounds.close();
     }
 
-    @Override
-    protected void paintComponent(Graphics graphics) {
-        super.paintComponent(graphics);
-        Graphics2D g = (Graphics2D) graphics.create();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    public double getCanvasWidth() {
+        return canvas.getWidth();
+    }
 
-        drawMaze(g);
-        drawStatus(g);
-        pacman.draw(g);
+    public double getCanvasHeight() {
+        return canvas.getHeight();
+    }
+
+    private void render() {
+        gc.setFill(BACKGROUND);
+        gc.fillRect(0, 0, maze.getWidth(), maze.getHeight());
+
+        drawMaze();
+        drawStatus();
+        pacman.draw(gc);
         for (Ghost ghost : ghosts) {
-            ghost.draw(g);
+            ghost.draw(gc);
         }
 
         if (!started) {
-            drawOverlay(g, "ПАКМАН", "Нажмите Enter или пробел, чтобы начать");
+            drawOverlay("ПАКМАН", "Нажмите Enter или пробел, чтобы начать");
         } else if (paused || gameOver) {
-            drawOverlay(g, paused ? "ПАУЗА" : (won ? "ПОБЕДА!" : "ИГРА ОКОНЧЕНА"),
+            drawOverlay(paused ? "ПАУЗА" : (won ? "ПОБЕДА!" : "ИГРА ОКОНЧЕНА"),
                     paused ? "Нажмите P, чтобы продолжить"
                             : "Нажмите Enter или пробел, чтобы начать заново");
         }
-        g.dispose();
     }
 
-    private void drawMaze(Graphics2D g) {
+    private void drawMaze() {
         for (int row = 0; row < Maze.ROWS; row++) {
             for (int column = 0; column < Maze.COLUMNS; column++) {
                 int x = column * Maze.TILE_SIZE;
                 int y = row * Maze.TILE_SIZE;
                 if (!maze.isWalkable(row, column)) {
-                    g.setColor(WALL_COLOR);
-                    g.fillRoundRect(x + 2, y + 2, Maze.TILE_SIZE - 4,
+                    gc.setFill(WALL_COLOR);
+                    gc.fillRoundRect(x + 2, y + 2, Maze.TILE_SIZE - 4,
                             Maze.TILE_SIZE - 4, 8, 8);
-                    g.setColor(new Color(54, 116, 225));
-                    g.setStroke(new BasicStroke(1.2f));
-                    g.drawRoundRect(x + 4, y + 4, Maze.TILE_SIZE - 8,
+                    gc.setStroke(Color.rgb(54, 116, 225));
+                    gc.setLineWidth(1.2);
+                    gc.strokeRoundRect(x + 4, y + 4, Maze.TILE_SIZE - 8,
                             Maze.TILE_SIZE - 8, 6, 6);
                 } else if (maze.hasEnergizer(row, column)) {
-                    g.setColor(new Color(255, 236, 190));
+                    gc.setFill(Color.rgb(255, 236, 190));
                     int size = 14;
                     int inset = (Maze.TILE_SIZE - size) / 2;
-                    g.fillOval(x + inset, y + inset, size, size);
+                    gc.fillOval(x + inset, y + inset, size, size);
                 } else if (maze.hasPellet(row, column)) {
-                    g.setColor(new Color(255, 224, 170));
+                    gc.setFill(Color.rgb(255, 224, 170));
                     int dotSize = 5;
-                    g.fillOval(x + (Maze.TILE_SIZE - dotSize) / 2,
-                            y + (Maze.TILE_SIZE - dotSize) / 2, dotSize, dotSize);
+                    gc.fillOval(x + (Maze.TILE_SIZE - dotSize) / 2.0,
+                            y + (Maze.TILE_SIZE - dotSize) / 2.0, dotSize, dotSize);
                 }
                 if (maze.isGhostDoor(row, column)) {
-                    g.setColor(new Color(255, 170, 205));
-                    g.fillRect(x + 2, y + Maze.TILE_SIZE / 2 - 2,
+                    gc.setFill(Color.rgb(255, 170, 205));
+                    gc.fillRect(x + 2, y + Maze.TILE_SIZE / 2.0 - 2,
                             Maze.TILE_SIZE - 4, 4);
                 }
             }
         }
     }
 
-    private void drawStatus(Graphics2D g) {
-        g.setColor(new Color(10, 13, 31, 210));
-        g.fillRect(0, 0, maze.getWidth(), 30);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        g.drawString("Счёт: " + score + "     Жизни: " + lives
+    private void drawStatus() {
+        gc.setFill(Color.rgb(10, 13, 31, 210 / 255.0));
+        gc.fillRect(0, 0, maze.getWidth(), 30);
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        gc.setTextAlign(TextAlignment.LEFT);
+        gc.setTextBaseline(VPos.BASELINE);
+        gc.fillText("Счёт: " + score + "     Жизни: " + lives
                 + "     Точки: " + maze.getRemainingPellets()
                 + "     Стрелки/WASD — движение   P — пауза",
                 10, 20);
     }
 
-    private void drawOverlay(Graphics2D g, String title, String hint) {
-        g.setColor(new Color(0, 0, 0, 185));
-        g.fillRect(0, 0, maze.getWidth(), maze.getHeight());
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        FontMetrics titleMetrics = g.getFontMetrics();
-        g.drawString(title, (maze.getWidth() - titleMetrics.stringWidth(title)) / 2,
-                maze.getHeight() / 2 - 10);
-        g.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        FontMetrics hintMetrics = g.getFontMetrics();
-        g.drawString(hint, (maze.getWidth() - hintMetrics.stringWidth(hint)) / 2,
-                maze.getHeight() / 2 + 25);
+    private void drawOverlay(String title, String hint) {
+        gc.setFill(Color.rgb(0, 0, 0, 185 / 255.0));
+        gc.fillRect(0, 0, maze.getWidth(), maze.getHeight());
+
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
+        gc.fillText(title, maze.getWidth() / 2.0, maze.getHeight() / 2.0 - 10);
+
+        gc.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
+        gc.fillText(hint, maze.getWidth() / 2.0, maze.getHeight() / 2.0 + 25);
     }
 
-    @FunctionalInterface
-    private interface GameAction {
-        void perform(ActionEvent event);
+    public static void showGame(Stage parent) {
+        Stage stage = new Stage();
+        stage.setTitle("Пакман (Pac-Man)");
+        PacmanGamePanel panel = new PacmanGamePanel();
+        Scene scene = new Scene(panel, panel.maze.getWidth(), panel.maze.getHeight());
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.setOnCloseRequest(e -> panel.stopGame());
+        if (parent != null) {
+            stage.initOwner(parent);
+        }
+        stage.show();
+        panel.requestFocus();
     }
 }

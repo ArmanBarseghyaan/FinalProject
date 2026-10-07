@@ -1,9 +1,9 @@
 package racing.model;
 
 import racing.exception.InvalidSpeedException;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.ArcType;
 
 public class PlayerCar extends GameObject {
     private float exactX;
@@ -89,59 +89,58 @@ public class PlayerCar extends GameObject {
     }
 
     @Override
-    public void draw(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-
+    public void draw(GraphicsContext gc) {
         // 1. Неоновая подсветка днища
-        Color neonColor = nitroActive ? new Color(0, 240, 255, 180) : new Color(255, 0, 128, 150);
-        g2d.setColor(neonColor);
-        g2d.fillRoundRect(getX() - 10, getY() - 5, getWidth() + 20, getHeight() + 10, 20, 20);
+        Color neonColor = nitroActive ? Color.rgb(0, 240, 255, 180 / 255.0) : Color.rgb(255, 0, 128, 150 / 255.0);
+        gc.setFill(neonColor);
+        gc.fillRoundRect(getX() - 10, getY() - 5, getWidth() + 20, getHeight() + 10, 20, 20);
 
         // 2. Огонь из выхлопных труб при Нитро
         if (nitroActive) {
-            g2d.setColor(new Color(0, 191, 255));
-            g2d.fillRect(getX() + 8, getY() + getHeight(), 8, 20);
-            g2d.fillRect(getX() + getWidth() - 16, getY() + getHeight(), 8, 20);
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(getX() + 10, getY() + getHeight(), 4, 12);
-            g2d.fillRect(getX() + getWidth() - 14, getY() + getHeight(), 4, 12);
+            gc.setFill(Color.rgb(0, 191, 255));
+            gc.fillRect(getX() + 8, getY() + getHeight(), 8, 20);
+            gc.fillRect(getX() + getWidth() - 16, getY() + getHeight(), 8, 20);
+            gc.setFill(Color.WHITE);
+            gc.fillRect(getX() + 10, getY() + getHeight(), 4, 12);
+            gc.fillRect(getX() + getWidth() - 14, getY() + getHeight(), 4, 12);
         }
 
         // 3. Агрессивный корпус
-        g2d.setColor(new Color(30, 0, 50));
-        g2d.fillRoundRect(getX(), getY(), getWidth(), getHeight(), 10, 10);
+        gc.setFill(Color.rgb(30, 0, 50));
+        gc.fillRoundRect(getX(), getY(), getWidth(), getHeight(), 10, 10);
 
         // Карбоновый капот
-        g2d.setColor(new Color(20, 20, 20));
-        g2d.fillRect(getX() + 6, getY() + 4, getWidth() - 12, 30);
+        gc.setFill(Color.rgb(20, 20, 20));
+        gc.fillRect(getX() + 6, getY() + 4, getWidth() - 12, 30);
 
         // Яркая винил-графика
-        g2d.setColor(new Color(255, 0, 100));
-        int[] xV = {getX() + 2, getX() + 15, getX() + getWidth() - 2};
-        int[] yV = {getY() + 40, getY() + 20, getY() + getHeight() - 10};
-        g2d.drawPolyline(xV, yV, 3);
+        gc.setStroke(Color.rgb(255, 0, 100));
+        gc.setLineWidth(1.5);
+        double[] xV = {getX() + 2, getX() + 15, getX() + getWidth() - 2};
+        double[] yV = {getY() + 40, getY() + 20, getY() + getHeight() - 10};
+        gc.strokePolyline(xV, yV, 3);
 
         // Тонированное лобовое стекло
-        g2d.setColor(new Color(10, 10, 15, 230));
-        g2d.fillRoundRect(getX() + 5, getY() + 22, 34, 16, 4, 4);
+        gc.setFill(Color.rgb(10, 10, 15, 230 / 255.0));
+        gc.fillRoundRect(getX() + 5, getY() + 22, 34, 16, 4, 4);
 
         // Ксеноновые передние фары
-        g2d.setColor(new Color(180, 240, 255));
-        g2d.fillOval(getX() + 2, getY() - 3, 10, 8);
-        g2d.fillOval(getX() + getWidth() - 12, getY() - 3, 10, 8);
+        gc.setFill(Color.rgb(180, 240, 255));
+        gc.fillOval(getX() + 2, getY() - 3, 10, 8);
+        gc.fillOval(getX() + getWidth() - 12, getY() - 3, 10, 8);
 
         // Ксеноновый луч на асфальте
-        g2d.setColor(new Color(0, 200, 255, 40));
-        g2d.fillArc(getX() - 30, getY() - 90, 104, 90, 60, 60);
+        gc.setFill(Color.rgb(0, 200, 255, 40 / 255.0));
+        gc.fillArc(getX() - 30, getY() - 90, 104, 90, 60, 60, ArcType.ROUND);
 
         // Задние диодные фонари
-        g2d.setColor(new Color(255, 0, 50));
-        g2d.fillRect(getX() + 2, getY() + getHeight() - 2, 12, 3);
-        g2d.fillRect(getX() + getWidth() - 14, getY() + getHeight() - 2, 12, 3);
+        gc.setFill(Color.rgb(255, 0, 50));
+        gc.fillRect(getX() + 2, getY() + getHeight() - 2, 12, 3);
+        gc.fillRect(getX() + getWidth() - 14, getY() + getHeight() - 2, 12, 3);
 
         // Спойлер
-        g2d.setColor(Color.BLACK);
-        g2d.fillRect(getX() - 2, getY() + getHeight() - 6, getWidth() + 4, 4);
+        gc.setFill(Color.BLACK);
+        gc.fillRect(getX() - 2, getY() + getHeight() - 6, getWidth() + 4, 4);
     }
 
     public int getSpeed() { return speed; }
