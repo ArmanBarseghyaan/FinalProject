@@ -56,12 +56,15 @@
 
 ---
 
-* **Сборка обычного JAR приложения**:
+* **Сборка исполняемого JAR со всеми зависимостями**:
   ```bash
-  mvn clean package
+  mvn package
   ```
-  Обычный JAR не включает JavaFX-зависимости, поэтому запускайте приложение через
-  `mvn clean javafx:run`, а не командой `java -jar`.
+  JAR сохраняется как `target/version1_0.jar`. Запуск:
+  ```bash
+  java -jar target/version1_0.jar
+  ```
+  В Windows PowerShell используйте `java -jar .\target\version1_0.jar`.
 
 Для автономного runtime-дистрибутива на текущей ОС можно использовать `mvn javafx:jlink`.
 Цель `jlink` требует модульный проект с `module-info.java`; пока проект не модульный,
@@ -84,7 +87,7 @@
 
 ## 🧪 Тестирование
 
-Для запуска Unit-тестов (JUnit 5 + Mockito + AssertJ):
+Для запуска Unit-тестов логики «Морского боя», «Змейки», гонок, Pac-Man и главного CLI-запуска:
 
 ```bash
 mvn test
